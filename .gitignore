@@ -1,0 +1,6 @@
+/bin/
+/docclassifier
+*.exe
+.idea/
+.vscode/
+.env
