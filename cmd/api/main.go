@@ -9,13 +9,14 @@ import (
 )
 
 type ClassifyRequest struct {
-    URL string `json:"url"`
+    URL    string `json:"url"`
+    Pretty bool   `json:"pretty,omitempty"`
 }
 
 type ClassifyResponse struct {
-    Success        bool     `json:"success"`
-    Data           *Result  `json:"data,omitempty"`
-    Error          string   `json:"error,omitempty"`
+    Success bool    `json:"success"`
+    Data    *Result `json:"data,omitempty"`
+    Error   string  `json:"error,omitempty"`
 }
 
 type Result struct {
@@ -58,20 +59,17 @@ func classifyHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Демо-версия: определяем тип документа по URL или заглушке
-    // В реальном API здесь будет загрузка файла и анализ текста
     result := classifyByURL(req.URL)
 
-    writeJSON(w, 200, ClassifyResponse{
+    writeJSONPretty(w, 200, ClassifyResponse{
         Success: true,
         Data:    result,
-    })
+    }, req.Pretty)
 }
 
 func classifyByURL(url string) *Result {
     urlLower := strings.ToLower(url)
 
-    // Простая демо-логика для MVP
     switch {
     case strings.Contains(urlLower, "passport") || strings.Contains(urlLower, "pasport"):
         return &Result{
@@ -124,10 +122,17 @@ func classifyByURL(url string) *Result {
     }
 }
 
-func writeJSON(w http.ResponseWriter, status int, data any) {
+func writeJSONPretty(w http.ResponseWriter, status int, data any, pretty bool) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(status)
-    json.NewEncoder(w).Encode(data)
+
+    if pretty {
+        encoder := json.NewEncoder(w)
+        encoder.SetIndent("", "  ")
+        encoder.Encode(data)
+    } else {
+        json.NewEncoder(w).Encode(data)
+    }
 }
 
 func writeError(w http.ResponseWriter, message string, status int) {
